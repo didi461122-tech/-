@@ -8,8 +8,9 @@
 
 const STORAGE_KEY = 'tanach_custom_server_url';
 
-// Default live backend Cloud Run server provided by AI Studio
-export const DEFAULT_CLOUD_RUN_SERVER = 'https://ais-pre-piw5nfxiw2pqvih4japf72-49901692255.europe-west1.run.app';
+// Default live backend server for static hosting
+export const DEFAULT_SERVER_URL = 'https://tanach-quiz-server.onrender.com';
+export const DEFAULT_CLOUD_RUN_SERVER = DEFAULT_SERVER_URL;
 
 export function isStaticDeployment(): boolean {
   if (typeof window === 'undefined') return false;
@@ -24,6 +25,11 @@ export function getServerBaseUrl(): string {
   try {
     const custom = localStorage.getItem(STORAGE_KEY);
     if (custom && custom.trim().length > 0) {
+      // Auto-migrate if the user had previously saved the inaccessible internal AI Studio URL
+      if (custom.includes('ais-pre-piw5nfxiw2pqvih4japf72-49901692255') || custom.includes('run.app')) {
+        localStorage.setItem(STORAGE_KEY, DEFAULT_SERVER_URL);
+        return DEFAULT_SERVER_URL;
+      }
       return custom.trim().replace(/\/+$/, '');
     }
   } catch (e) {
@@ -35,9 +41,9 @@ export function getServerBaseUrl(): string {
     return (import.meta.env.VITE_SERVER_URL as string).replace(/\/+$/, '');
   }
 
-  // 3. If deployed on GitHub Pages or other static hosting, use Cloud Run backend
+  // 3. If deployed on GitHub Pages or other static hosting, use default backend
   if (isStaticDeployment()) {
-    return DEFAULT_CLOUD_RUN_SERVER;
+    return DEFAULT_SERVER_URL;
   }
 
   // 4. Fallback to same-origin (for full-stack dev and Cloud Run)

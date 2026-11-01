@@ -7,6 +7,7 @@ import {
   getServerBaseUrl, 
   setCustomServerUrl, 
   isStaticDeployment, 
+  DEFAULT_SERVER_URL,
   DEFAULT_CLOUD_RUN_SERVER 
 } from '../utils/serverConfig';
 import { 
@@ -82,8 +83,8 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
   const handleResetToDefaultServer = () => {
     sound.playClick();
     setCustomServerUrl(null);
-    setServerUrlInput(DEFAULT_CLOUD_RUN_SERVER);
-    setServerSaveMsg('אופס לשרת ברירת המחדל של Cloud Run. מתחבר מחדש...');
+    setServerUrlInput(DEFAULT_SERVER_URL);
+    setServerSaveMsg('אופס לשרת ברירת המחדל (Render). מתחבר מחדש...');
     handleReconnect();
     setTimeout(() => setServerSaveMsg(null), 3000);
   };
@@ -268,7 +269,7 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
                   type="text"
                   value={serverUrlInput}
                   onChange={(e) => setServerUrlInput(e.target.value)}
-                  placeholder="https://your-server.run.app"
+                  placeholder="https://tanach-quiz-server.onrender.com"
                   dir="ltr"
                   className="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 text-xs font-mono focus:border-amber-500 focus:outline-none"
                 />
@@ -287,7 +288,7 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
                   onClick={handleResetToDefaultServer}
                   className="text-amber-400 hover:underline"
                 >
-                  אפס לשרת ברירת המחדל של Cloud Run
+                  אפס לשרת ברירת המחדל (Render)
                 </button>
                 <span className="text-slate-500 font-mono text-[10px]">
                   WS: {multiplayerService.getActiveWsUrl()}
