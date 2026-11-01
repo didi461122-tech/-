@@ -5,6 +5,7 @@ import {
   OnlineGameMode, 
   OnlineHeadToHeadSubMode 
 } from '../types/multiplayer';
+import { getWebSocketUrl } from '../utils/serverConfig';
 
 type RoomListCallback = (rooms: {
   id: string;
@@ -49,8 +50,7 @@ class MultiplayerService {
     }
 
     this.isConnecting = true;
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}`;
+    const wsUrl = getWebSocketUrl();
 
     try {
       this.ws = new WebSocket(wsUrl);
@@ -90,6 +90,28 @@ class MultiplayerService {
       this.isConnecting = false;
       this.notifyConnectionChange(false);
     }
+  }
+
+  public forceReconnect(): void {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    if (this.ws) {
+      try {
+        this.ws.onclose = null;
+        this.ws.close();
+      } catch (e) {
+        // Ignore
+      }
+      this.ws = null;
+    }
+    this.isConnecting = false;
+    this.connect();
+  }
+
+  public getActiveWsUrl(): string {
+    return getWebSocketUrl();
   }
 
   private handleServerMessage(msg: ServerMessage): void {

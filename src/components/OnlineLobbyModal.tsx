@@ -4,9 +4,15 @@ import { OnlineGameMode, OnlineHeadToHeadSubMode } from '../types/multiplayer';
 import { Difficulty } from '../types/quiz';
 import { sound } from '../utils/audio';
 import { 
+  getServerBaseUrl, 
+  setCustomServerUrl, 
+  isStaticDeployment, 
+  DEFAULT_CLOUD_RUN_SERVER 
+} from '../utils/serverConfig';
+import { 
   X, Users, Swords, Trophy, Sparkles, PlusCircle, 
   LogIn, RefreshCw, AlertCircle, ArrowLeft, ShieldCheck, 
-  Radio, Zap, Clock
+  Radio, Zap, Clock, Settings, Server, Check
 } from 'lucide-react';
 
 interface OnlineLobbyModalProps {
@@ -48,6 +54,39 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
   
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(multiplayerService.isConnected());
+  const [showServerConfig, setShowServerConfig] = useState<boolean>(false);
+  const [serverUrlInput, setServerUrlInput] = useState<string>(getServerBaseUrl());
+  const [isReconnecting, setIsReconnecting] = useState<boolean>(false);
+  const [serverSaveMsg, setServerSaveMsg] = useState<string | null>(null);
+
+  const handleReconnect = () => {
+    sound.playClick();
+    setIsReconnecting(true);
+    multiplayerService.forceReconnect();
+    setTimeout(() => {
+      setIsReconnecting(false);
+      multiplayerService.requestRoomsList();
+    }, 1800);
+  };
+
+  const handleSaveServerUrl = (e: React.FormEvent) => {
+    e.preventDefault();
+    sound.playClick();
+    const clean = serverUrlInput.trim();
+    setCustomServerUrl(clean.length > 0 ? clean : null);
+    setServerSaveMsg('כתובת השרת עודכנה בהצלחה! מתחבר מחדש...');
+    handleReconnect();
+    setTimeout(() => setServerSaveMsg(null), 3000);
+  };
+
+  const handleResetToDefaultServer = () => {
+    sound.playClick();
+    setCustomServerUrl(null);
+    setServerUrlInput(DEFAULT_CLOUD_RUN_SERVER);
+    setServerSaveMsg('אופס לשרת ברירת המחדל של Cloud Run. מתחבר מחדש...');
+    handleReconnect();
+    setTimeout(() => setServerSaveMsg(null), 3000);
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -135,9 +174,29 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
               <Zap className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-xl font-black font-heading text-white">שחק אונליין עם חברים</h2>
-                <span className={`inline-block w-2.5 h-2.5 rounded-full ${isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
+                <div 
+                  className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
+                    isConnected 
+                      ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300' 
+                      : 'bg-red-500/15 border-red-500/30 text-red-300'
+                  }`}
+                  title={isConnected ? 'מחובר לשרת המשחקים' : 'אין חיבור לשרת המשחקים'}
+                >
+                  <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-red-500'}`} />
+                  <span>{isConnected ? 'שרת מחובר' : 'שרת מנותק'}</span>
+                </div>
+                
+                <button
+                  type="button"
+                  onClick={() => setShowServerConfig(!showServerConfig)}
+                  className="text-xs text-slate-400 hover:text-amber-300 underline flex items-center gap-1 transition-colors mr-1"
+                  title="הגדרות שרת ענן"
+                >
+                  <Settings className="w-3 h-3" />
+                  <span>הגדרות שרת</span>
+                </button>
               </div>
               <p className="text-xs text-slate-400">
                 קרבות בזמן אמת דרך קוד חדר אישי · 100% שאלות אמריקאיות עם בדיקה אוטומטית
@@ -153,8 +212,100 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
           </button>
         </div>
 
+        {/* Server Disconnected Notice Banner */}
+        {!isConnected && (
+          <div className="mx-6 mt-4 p-3.5 bg-red-950/40 border border-red-500/40 rounded-2xl text-xs space-y-2">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-2 text-red-200">
+                <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                <div>
+                  <div className="font-bold text-red-300 mb-0.5">
+                    השרת מנותק (נקודה אדומה)
+                  </div>
+                  <div className="text-slate-300 text-[11px] leading-relaxed">
+                    כאשר מפרסמים את האתר ב-GitHub Pages, נדרש שרת ענן פעיל שמנהל את החיבורים והחדרים.
+                    המערכת מנסה להתחבר לשרת הענן המרכזי.
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleReconnect}
+                disabled={isReconnecting}
+                className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow transition-all flex items-center gap-1.5 shrink-0 disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isReconnecting ? 'animate-spin' : ''}`} />
+                <span>{isReconnecting ? 'מתחבר...' : 'התחבר מחדש'}</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Collapsible Server Settings */}
+        {showServerConfig && (
+          <div className="mx-6 mt-4 p-4 bg-slate-950/90 border border-amber-500/30 rounded-2xl text-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 font-bold text-amber-300 text-sm">
+                <Server className="w-4 h-4 text-amber-400" />
+                <span>הגדרות כתובת שרת המשחק (Backend)</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowServerConfig(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <p className="text-slate-300 text-[11px] leading-relaxed">
+              באתר סטטי (כמו GitHub Pages ב-didi461122-tech.github.io) הדפדפן צריך להתחבר לכתובת שרת פעיל של Node.js (ב-Google Cloud Run, Render, Railway וכד').
+            </p>
+
+            <form onSubmit={handleSaveServerUrl} className="space-y-2">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={serverUrlInput}
+                  onChange={(e) => setServerUrlInput(e.target.value)}
+                  placeholder="https://your-server.run.app"
+                  dir="ltr"
+                  className="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 text-xs font-mono focus:border-amber-500 focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl transition-all flex items-center gap-1 shrink-0"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>שמור והתחבר</span>
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between text-[11px] pt-1">
+                <button
+                  type="button"
+                  onClick={handleResetToDefaultServer}
+                  className="text-amber-400 hover:underline"
+                >
+                  אפס לשרת ברירת המחדל של Cloud Run
+                </button>
+                <span className="text-slate-500 font-mono text-[10px]">
+                  WS: {multiplayerService.getActiveWsUrl()}
+                </span>
+              </div>
+            </form>
+
+            {serverSaveMsg && (
+              <div className="p-2 bg-emerald-950/60 border border-emerald-500/50 rounded-lg text-emerald-300 text-[11px] flex items-center gap-1.5">
+                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                <span>{serverSaveMsg}</span>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Navigation Tabs */}
-        <div className="flex border-b border-slate-800 bg-slate-950/60 p-2 gap-2">
+        <div className="flex border-b border-slate-800 bg-slate-950/60 p-2 gap-2 mt-2">
           <button
             type="button"
             onClick={() => {

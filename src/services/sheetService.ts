@@ -1,4 +1,5 @@
 import { Question, Difficulty } from '../types/quiz';
+import { getApiUrl } from '../utils/serverConfig';
 
 /**
  * ============================================================================
@@ -886,7 +887,7 @@ export async function loadQuizQuestions(customUrl?: string): Promise<{ questions
   // If no URL in localStorage or param, check if the server has a globally configured default URL
   if (!activeUrl || activeUrl === 'YOUR_GOOGLE_SHEETS_CSV_EXPORT_URL_HERE' || activeUrl.trim() === '') {
     try {
-      const defRes = await fetch('/api/default-sheet');
+      const defRes = await fetch(getApiUrl('/api/default-sheet'));
       if (defRes.ok) {
         const defData = await defRes.json();
         if (defData.defaultUrl && defData.defaultUrl.trim() !== '') {
@@ -925,7 +926,7 @@ export async function loadQuizQuestions(customUrl?: string): Promise<{ questions
 
   // 1. Try fetching via our Server-Side Proxy to avoid CORS and redirects completely
   try {
-    const proxyUrl = `/api/sheet-proxy?url=${encodeURIComponent(exportUrl)}`;
+    const proxyUrl = getApiUrl(`/api/sheet-proxy?url=${encodeURIComponent(exportUrl)}`);
     const proxyRes = await fetch(proxyUrl);
 
     if (proxyRes.ok) {

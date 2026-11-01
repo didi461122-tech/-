@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SHEET_URL, formatGoogleSheetCsvUrl, parseQuestionsFromCsv } from '../services/sheetService';
 import { Question } from '../types/quiz';
+import { getApiUrl } from '../utils/serverConfig';
 import { 
   Database, Check, AlertCircle, RefreshCw, X, 
   ExternalLink, FileSpreadsheet, Eye, Clipboard, HelpCircle 
@@ -88,7 +89,7 @@ export const SheetSettingsModal: React.FC<SheetSettingsModalProps> = ({
 
     try {
       const exportUrl = formatGoogleSheetCsvUrl(urlInput.trim());
-      const proxyUrl = `/api/sheet-proxy?url=${encodeURIComponent(exportUrl)}`;
+      const proxyUrl = getApiUrl(`/api/sheet-proxy?url=${encodeURIComponent(exportUrl)}`);
       const res = await fetch(proxyUrl);
       
       if (!res.ok) {

@@ -37,6 +37,7 @@ import { BiblicalMapAtlas } from './components/BiblicalMapAtlas';
 import { multiplayerService } from './services/multiplayerService';
 import { MultiplayerRoom } from './types/multiplayer';
 import { sound } from './utils/audio';
+import { getApiUrl } from './utils/serverConfig';
 import { RefreshCw, AlertCircle } from 'lucide-react';
 
 type AppState = 
@@ -95,7 +96,7 @@ export default function App() {
   // Load custom questions created by teachers
   const loadCustomQuestions = async () => {
     try {
-      const res = await fetch('/api/custom-questions');
+      const res = await fetch(getApiUrl('/api/custom-questions'));
       if (res.ok) {
         const data = await res.json();
         if (data.questions && Array.isArray(data.questions)) {
@@ -111,7 +112,7 @@ export default function App() {
     const updated = [...customQuestions, ...newQs];
     setCustomQuestions(updated);
     try {
-      await fetch('/api/custom-questions', {
+      await fetch(getApiUrl('/api/custom-questions'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ questions: updated })
@@ -125,7 +126,7 @@ export default function App() {
     const updated = customQuestions.filter(q => q.id !== id);
     setCustomQuestions(updated);
     try {
-      await fetch('/api/custom-questions', {
+      await fetch(getApiUrl('/api/custom-questions'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ questions: updated })
@@ -649,7 +650,7 @@ export default function App() {
           await loadData(url);
           // Persist globally on server so it becomes the default across all devices and sessions
           try {
-            await fetch('/api/default-sheet', {
+            await fetch(getApiUrl('/api/default-sheet'), {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ url })
@@ -663,7 +664,7 @@ export default function App() {
             localStorage.removeItem('tanach_quiz_custom_sheet_url');
           }
           try {
-            await fetch('/api/default-sheet', {
+            await fetch(getApiUrl('/api/default-sheet'), {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ url: '' })

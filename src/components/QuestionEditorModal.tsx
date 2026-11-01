@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Question, Difficulty } from '../types/quiz';
 import { sound } from '../utils/audio';
+import { getApiUrl } from '../utils/serverConfig';
 import { 
   Sparkles, PlusCircle, BookOpen, Trash2, Download, 
   Upload, Check, AlertCircle, RefreshCw, X, Layers
@@ -66,7 +67,7 @@ export const QuestionEditorModal: React.FC<QuestionEditorModalProps> = ({
     sound.playClick();
 
     try {
-      const res = await fetch('/api/gemini/generate-questions', {
+      const res = await fetch(getApiUrl('/api/gemini/generate-questions'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
